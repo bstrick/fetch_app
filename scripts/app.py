@@ -44,6 +44,12 @@ def receipts():
     if float(json['total']) % .25 == 0 and json['total'] != '00.00':
         total_points += 25
 
+    '''
+    if float(json['total']) > 10.00:
+        total_points += 5
+    '''
+
+
     # 5 pts every 2 items in the receipt
     total_points += len(json['items']) // 2 * 5
 
