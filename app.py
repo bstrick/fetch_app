@@ -9,7 +9,12 @@ local_memory = {}
 
 @app.route('/receipts/process', methods=['POST'])
 def receipts():
-    json = request.get_json()
+
+    #Check to handle JSON is passed to the API as expected. Return 400 if the receipt is missing.
+    try:
+        json = request.get_json()
+    except:
+        return {"error": "Missing JSON receipt data. Please pass the JSON receipt  the body"}, 400
     total_points = 0
 
     #Checking for JSON abnormalities.
@@ -25,22 +30,25 @@ def receipts():
         if character.isalnum():
             total_points += 1
 
-    # total checks
+    #Verifying that total is formatted correctly. I.E 5.00
     if '.' not in json['total']:
         return {"error": "Total variable formatted incorrectly"}, 400
 
     dollar,cents = json['total'].split('.')
 
+    #Checking if total is a rounded dollar amount. I.E, no cents and had a dollar value
     if cents == '00' and dollar != '00':
         total_points += 50
 
+    #Checking if .25 is a multiple of the total cost. I.E, .25 divides evenly and the total given isn't 0.
     if float(json['total']) % .25 == 0 and json['total'] != '00.00':
         total_points += 25
 
-    # 5 pts every 2 items
+    # 5 pts every 2 items in the receipt
     total_points += len(json['items']) // 2 * 5
 
     # If trimmed length of item description is a multiple of 3, multipy price by .2 and round up
+    # Additionally, checking to make sure every item has a shortDescription and price.
     for item in json['items']:
         if ('shortDescription' not in item or
                 'price' not in item):
@@ -49,6 +57,7 @@ def receipts():
         if len(item['shortDescription'].strip()) % 3 == 0:
             total_points += math.ceil(float(item['price']) * .2)
 
+    #Checking to make sure the date is formatted correctly.
     if '-' not in json['purchaseDate'] or int(json['purchaseDate'].split('-')[1]) > 12 or int(
             json['purchaseDate'].split('-')[2]) > 31:
         return {"error": "Please format a valid Purchase Date in the format YYYY-MM-DD"}, 400
@@ -57,7 +66,7 @@ def receipts():
     if int(json['purchaseDate'].split('-')[2]) % 2 == 1:
         total_points += 6
 
-    # 10 points if time of purchase is between 2 and 4 PM
+    #Checking to make sure the purchaseTime is formatted correctly and handled.
     if ':' not in json['purchaseTime']:
         return {"error": "Please format purchase time in the format HH:MM"}, 400
 
@@ -65,6 +74,7 @@ def receipts():
     hour, minute = map(int, PurchaseTime)
     totalTime = hour * 60 + minute
 
+    # 10 points if time of purchase is between 2 and 4 PM
     #840 = 14 * 60 (14:00) 960 = 16*60 (16:00)
     if 840 <= totalTime < 960:
         total_points += 10
