@@ -14,7 +14,7 @@ def receipts():
     try:
         json = request.get_json()
     except:
-        return {"error": "Missing JSON receipt data. Please pass the JSON receipt  the body"}, 400
+        return {"error": "Missing JSON receipt data. Please pass the JSON receipt in the body"}, 400
     total_points = 0
 
     #Checking for JSON abnormalities.
